@@ -1,0 +1,14 @@
+{
+  "branding": {
+    "splash_image": "/opt/piviewer/assets/splashscreen.png",
+    "splash_seconds": 3
+  },
+  "stream": {
+    "main_source_url": "https://d2eanln3bsfb0d.cloudfront.net/nlpo/clr-nlpo/rtvmeppel/index.m3u8",
+    "retry_seconds": 10,
+    "mpv_extra_args": [
+      "--fullscreen",
+      "--no-terminal"
+    ]
+  }
+}

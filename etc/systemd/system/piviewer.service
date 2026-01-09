@@ -1,0 +1,13 @@
+[Unit]
+Description=PiViewer v2.1.0 Headless Player
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=piviewer
+ExecStart=/usr/bin/python3 /opt/piviewer/app/piviewer.py --config /opt/piviewer/config/config.json
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
