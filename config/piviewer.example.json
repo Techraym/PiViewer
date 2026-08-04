@@ -1,5 +1,5 @@
 {
-  "version": "PiViewer 2028",
+  "version": "PiViewer 2031",
   "timezone": "Europe/Amsterdam",
   "main_stream": {
     "name": "RTV Meppel",
@@ -150,19 +150,6 @@
     "usb_update": {
       "enabled": true,
       "auto_install": true
-    },
-    "web_update": {
-      "enabled": true,
-      "auto_install": true,
-      "interval_hours": 24,
-      "failure_retry_hours": 1,
-      "timeout_seconds": 8,
-      "download_timeout_seconds": 120,
-      "base_url": "https://raysnijder.nl/rep/piviewer/",
-      "file_pattern": "PiViewer_{version}.zip",
-      "direct_zip_scan": true,
-      "manifest_fallback": false,
-      "lookahead_versions": 20
     }
   }
 }

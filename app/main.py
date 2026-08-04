@@ -14,7 +14,6 @@ from web import PiViewerWeb
 from usbmedia import ensure_usb_mounts
 from usb_wifi import apply_usb_wifi_configs
 from usb_update import check_usb_auto_update, cleanup_stale_update_state
-from web_update import check_web_auto_update, cleanup_stale_web_update_state
 from networkcheck import internet_available, last_network_reason
 
 APP_VERSION = Path("/opt/piviewer-dev/VERSION").read_text(encoding="utf-8").strip() if Path("/opt/piviewer-dev/VERSION").exists() else "PiViewer 2027"
@@ -122,7 +121,6 @@ def main():
     )
     state = RuntimeState(STATE_FILE)
     cleanup_stale_update_state(logger)
-    cleanup_stale_web_update_state(logger)
     state.update(
         version=APP_VERSION,
         mode="starting",
@@ -170,12 +168,6 @@ def main():
             apply_usb_wifi_configs(config, logger, usb_mounts)
             if check_usb_auto_update(config, logger, usb_mounts, APP_VERSION):
                 state.update(status="updating", message="Hogere PiViewer-versie op USB gevonden; auto-update gestart")
-                time.sleep(30)
-                continue
-
-            # Web-update is een extra updatekanaal. USB-update houdt altijd prioriteit.
-            if check_web_auto_update(config, logger, APP_VERSION):
-                state.update(status="updating", message="Hogere PiViewer-versie op raysnijder.nl gevonden; web-update gestart")
                 time.sleep(30)
                 continue
 

@@ -184,6 +184,13 @@ def main():
         return 1
 
     log(f"GitHub-update naar PiViewer {latest} voltooid.")
+    reboot_flag = Path("/var/lib/piviewer-dev/reboot-after-github-update")
+    if not reboot_flag.exists():
+        log("GitHub-update voltooid; Raspberry Pi reboot wordt gestart.")
+        try:
+            run(["systemctl", "reboot"], check=False)
+        except Exception as exc:
+            log(f"WAARSCHUWING: reboot starten mislukt: {exc}")
     return 0
 
 

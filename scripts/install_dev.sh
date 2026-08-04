@@ -65,6 +65,20 @@ fi
 systemctl restart "${SERVICE_NAME}"
 
 echo "[8/8] Klaar"
+
+echo "[extra] Oude raysnijder.nl web-update resten opruimen"
+rm -f "${STATE_DIR}/web-update-in-progress" 2>/dev/null || true
+rm -f "${STATE_DIR}/run-web-update.sh" 2>/dev/null || true
+rm -f "${STATE_DIR}/web-update-last-check.json" 2>/dev/null || true
+rm -rf "${STATE_DIR}/web-updates" 2>/dev/null || true
+rm -f "${LOG_DIR}/web-update.log" 2>/dev/null || true
+
+if [ -f "${STATE_DIR}/github-update-in-progress" ] && [ "${PIVIEWER_NO_REBOOT:-0}" != "1" ]; then
+  echo "[extra] GitHub-update gedetecteerd; Raspberry Pi reboot over 10 seconden."
+  touch "${STATE_DIR}/reboot-after-github-update" 2>/dev/null || true
+  nohup bash -c 'sleep 10; /bin/systemctl reboot' > "${LOG_DIR}/reboot-after-github-update.log" 2>&1 &
+fi
+
 echo "Status: sudo systemctl status ${SERVICE_NAME}"
 echo "Logs:   journalctl -u ${SERVICE_NAME} -f"
 echo "Config: ${CONFIG_DIR}/piviewer.json"
