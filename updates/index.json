@@ -3,12 +3,12 @@
   "version": "PiViewer 2030",
   "latest": 2030,
   "version_number": 2030,
-  "channel": "pidev",
+  "channel": "stable",
   "minimum_device": "Raspberry Pi 2",
   "check_interval_hours": 24,
   "zip_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2030.zip",
   "sha256_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2030.zip.sha256",
   "sha256": "783a393f0778328f928b8a059b94e716aaeff4376c7c84871f5bf4de869d7c37",
   "release_date": "2026-08-04",
-  "notes": "PiDev testversie. USB-slideshow stopt schoon na verwijderen USB. GitHub updater draait los via systemd met SHA256-controle."
+  "notes": "Stabiele PiViewer 2030 release. USB-slideshow stopt schoon na verwijderen USB. GitHub updater draait los via systemd met SHA256-controle."
 }
