@@ -1,0 +1,17 @@
+[Unit]
+Description=PiViewer Lite Dev
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/piviewer-dev
+Environment=PYTHONUNBUFFERED=1
+Environment=PIVIEWER_CONFIG=/etc/piviewer-dev/piviewer.json
+ExecStart=/usr/bin/python3 /opt/piviewer-dev/app/main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

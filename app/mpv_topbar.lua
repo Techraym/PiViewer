@@ -1,0 +1,3 @@
+-- PiViewer 2027: mpv_topbar.lua wordt niet meer gebruikt voor streams.
+-- De stream-statusbalk wordt via FFmpeg lavfi drawbox/drawtext in app/player.py getekend.
+-- Dit voorkomt dat ASS Dialogue-regels als gewone tekst op het scherm verschijnen.

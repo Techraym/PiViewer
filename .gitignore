@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.env
+.env.*
+photo-cache/
+usbmounts/
+generated/
+tmp/
+*.tar.gz
+*.zip

@@ -1,0 +1,168 @@
+{
+  "version": "PiViewer 2028",
+  "timezone": "Europe/Amsterdam",
+  "main_stream": {
+    "name": "RTV Meppel",
+    "type": "hls",
+    "url": "https://d2eanln3bsfb0d.cloudfront.net/nlpo/clr-nlpo/rtvmeppel/index.m3u8",
+    "enabled": true
+  },
+  "schedule": [
+    {
+      "id": "twitch_richard_dinsdag_weekly",
+      "name": "Twitch Richard841116 dinsdagavond",
+      "enabled": true,
+      "stream": {
+        "type": "twitch",
+        "url": "twitch://richard841116",
+        "channel": "richard841116",
+        "quality": "360p"
+      },
+      "months": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "days": [
+        "tuesday"
+      ],
+      "time": {
+        "start": "19:00",
+        "end": "22:00"
+      },
+      "repeat": {
+        "type": "weekly",
+        "interval": 1
+      },
+      "priority": 10
+    }
+  ],
+  "usb_slideshow": {
+    "enabled": true,
+    "paths": [
+      "/media/usb",
+      "/mnt/usb",
+      "/media/pi",
+      "/media",
+      "/run/media",
+      "/opt/piviewer-dev/media/fallback"
+    ],
+    "duration_seconds": 5,
+    "random": true,
+    "allowed_extensions": [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".webp",
+      ".bmp"
+    ],
+    "auto_mount": {
+      "enabled": true,
+      "mount_root": "/var/lib/piviewer-dev/usbmounts",
+      "readonly": true
+    },
+    "resume_stream_on_remove": true,
+    "image_cache": {
+      "enabled": true,
+      "cache_dir": "/var/lib/piviewer-dev/photo-cache",
+      "max_width": 1280,
+      "max_height": 720,
+      "format": "jpeg",
+      "quality": 88,
+      "background": "black",
+      "rebuild_on_change": true
+    },
+    "exclude_filenames": [
+      "nossid.png",
+      "nointernet.png"
+    ]
+  },
+  "player": {
+    "max_delay_seconds": 120,
+    "readahead_seconds": 15,
+    "max_cache_mb": 24,
+    "network_timeout_seconds": 10,
+    "hls_bitrate": "max",
+    "audio_enabled": false,
+    "restart_on_stall_seconds": 15,
+    "reconnect_delay_seconds": 5,
+    "scheduler_tick_seconds": 5,
+    "config_reload_seconds": 10,
+    "quality_profile": "balanced",
+    "scale_mode": "bilinear",
+    "video_sync": "audio",
+    "failed_source_cooldown_seconds": 60,
+    "display_bar": {
+      "enabled": true,
+      "height": 32,
+      "font_size": 15,
+      "title": "PiViewer by Techraym",
+      "show_seconds": true
+    }
+  },
+  "web": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 8080,
+    "refresh_seconds": 5,
+    "allow_config_edit": true,
+    "allow_wifi_setup": true
+  },
+  "logs": {
+    "level": "INFO",
+    "max_file_mb": 2,
+    "backup_count": 3
+  },
+  "usb_wifi": {
+    "enabled": true,
+    "filename": "WiFi.txt",
+    "apply_on_insert": true,
+    "delete_after_success": false,
+    "prefer_nmcli": true,
+    "requires_first_line": "PIVIEWER_WIFI=READ"
+  },
+  "usb_update": {
+    "enabled": true,
+    "scan_on_usb_insert": true,
+    "minimum_version": "PiViewer 2014"
+  },
+  "system_images": {
+    "assets_dir": "/opt/piviewer-dev/assets",
+    "wifi_error_image": "nossid.png"
+  },
+  "network_monitor": {
+    "enabled": true,
+    "check_interval_seconds": 15,
+    "check_host": "1.1.1.1",
+    "check_port": 53,
+    "timeout_seconds": 2
+  },
+  "updates": {
+    "usb_update": {
+      "enabled": true,
+      "auto_install": true
+    },
+    "web_update": {
+      "enabled": true,
+      "auto_install": true,
+      "interval_hours": 24,
+      "failure_retry_hours": 1,
+      "timeout_seconds": 8,
+      "download_timeout_seconds": 120,
+      "base_url": "https://raysnijder.nl/rep/piviewer/",
+      "file_pattern": "PiViewer_{version}.zip",
+      "direct_zip_scan": true,
+      "manifest_fallback": false,
+      "lookahead_versions": 20
+    }
+  }
+}
