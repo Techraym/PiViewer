@@ -1,14 +1,14 @@
 {
   "project": "PiViewer",
-  "version": "PiViewer 2033",
-  "latest": 2033,
-  "version_number": 2033,
+  "version": "PiViewer 2034",
+  "latest": 2034,
+  "version_number": 2034,
   "channel": "stable",
   "minimum_device": "Raspberry Pi 2",
   "check_interval_hours": 24,
-  "zip_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2033.zip",
-  "sha256_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2033.zip.sha256",
-  "sha256": "a90947922c71db93210b234bb6bf6609fee0d98cb54ac4162055ae2321586757",
+  "zip_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2034.zip",
+  "sha256_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2034.zip.sha256",
+  "sha256": "1b06436edaee14ef88c6331906ee7ab977e2d199972a21068751885785ec7cb8",
   "release_date": "2026-08-04",
-  "notes": "PiViewer 2033: WiFi.txt blijft de WiFi instellen. Bedraad blijft voorkeur bij netwerkkabel. NetworkManager-profielnaam is nu gelijk aan de SSID, bijvoorbeeld GAST. Geen WiFi-wachtwoorden in de release."
+  "notes": "PiViewer 2034: bestaande configs met PiViewer Dev worden bij installatie automatisch gemigreerd naar PiViewer final. PiDev kan lokaal met PIVIEWER_WEB_TITLE=PiViewer Dev blijven testen."
 }

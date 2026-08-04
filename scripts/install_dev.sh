@@ -38,6 +38,51 @@ else
   echo "Bestaande config behouden en backup gemaakt."
 fi
 
+
+echo "[4b/8] Config migreren naar final titel"
+export CONFIG_DIR APP_DIR
+python3 - <<'PIVIEWER_CONFIG_MIGRATION_PY'
+import json
+import os
+from pathlib import Path
+
+cfg_dir = Path(os.environ.get("CONFIG_DIR", "/etc/piviewer-dev"))
+app_dir = Path(os.environ.get("APP_DIR", "/opt/piviewer-dev"))
+cfg_path = cfg_dir / "piviewer.json"
+version_file = app_dir / "VERSION"
+
+try:
+    data = json.loads(cfg_path.read_text(encoding="utf-8"))
+
+    try:
+        data["version"] = version_file.read_text(encoding="utf-8").strip()
+    except Exception:
+        data["version"] = "PiViewer 2034"
+
+    data.setdefault("web", {})
+    current_title = str(data["web"].get("title") or "").strip()
+    forced_title = str(os.environ.get("PIVIEWER_WEB_TITLE", "")).strip()
+
+    if forced_title:
+        data["web"]["title"] = forced_title
+    elif not current_title or current_title.lower() in (
+        "piviewer dev",
+        "piviewer-dev",
+        "piviewer development",
+        "piviewer test",
+    ):
+        data["web"]["title"] = "PiViewer final"
+
+    if isinstance(data.get("updates"), dict):
+        data["updates"].pop("web_update", None)
+    data.pop("web_update", None)
+
+    cfg_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print("Config migratie OK; webtitel=" + str(data.get("web", {}).get("title")))
+except Exception as exc:
+    print("WAARSCHUWING: config migratie mislukt:", exc)
+PIVIEWER_CONFIG_MIGRATION_PY
+
 echo "[5/8] systemd-service installeren"
 cp "${APP_DIR}/systemd/${SERVICE_NAME}" "/etc/systemd/system/${SERVICE_NAME}"
 
