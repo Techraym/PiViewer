@@ -8,7 +8,7 @@
   "check_interval_hours": 24,
   "zip_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2033.zip",
   "sha256_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2033.zip.sha256",
-  "sha256": "d7010ee1498617a745a91fcf528224e96ac1696be66140ef0dce813961873ef6",
+  "sha256": "a90947922c71db93210b234bb6bf6609fee0d98cb54ac4162055ae2321586757",
   "release_date": "2026-08-04",
   "notes": "PiViewer 2033: WiFi.txt blijft de WiFi instellen. Bedraad blijft voorkeur bij netwerkkabel. NetworkManager-profielnaam is nu gelijk aan de SSID, bijvoorbeeld GAST. Geen WiFi-wachtwoorden in de release."
 }
