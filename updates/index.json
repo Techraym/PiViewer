@@ -8,7 +8,7 @@
   "check_interval_hours": 24,
   "zip_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2031.zip",
   "sha256_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2031.zip.sha256",
-  "sha256": "133e116fafca6795805d3e62f149bb604bb52bfa6567eba6637f79f143e8db6e",
+  "sha256": "0df146186f412050cb9007b791d34bf2cc38e74bc7ed5274bb4c592f67a2ef77",
   "release_date": "2026-08-04",
-  "notes": "PiViewer 2031: GitHub-updates rebooten automatisch na installatie. raysnijder.nl/web-update is verwijderd. Oude web-update resten worden opgeruimd."
+  "notes": "PiViewer 2031: officiele webtitel is PiViewer final. GitHub-updates rebooten automatisch na installatie. raysnijder.nl/web-update is verwijderd."
 }

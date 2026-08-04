@@ -115,7 +115,8 @@
     "port": 8080,
     "refresh_seconds": 5,
     "allow_config_edit": true,
-    "allow_wifi_setup": true
+    "allow_wifi_setup": true,
+    "title": "PiViewer final"
   },
   "logs": {
     "level": "INFO",

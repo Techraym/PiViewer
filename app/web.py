@@ -259,12 +259,17 @@ class PiViewerWeb:
 
             def layout(self, title: str, content: str, query: Dict[str, List[str]] = None) -> str:
                 query = query or {}
+                try:
+                    cfg_for_title = load_config()
+                    app_title = str(cfg_for_title.get('web', {}).get('title') or 'PiViewer final')
+                except Exception:
+                    app_title = 'PiViewer final'
                 return f'''<!doctype html>
 <html lang="nl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(title)} - PiViewer Dev</title>
+<title>{esc(title)} - {esc(app_title)}</title>
 <style>
 body {{ font-family: Arial, sans-serif; margin: 0; background:#111; color:#eee; }}
 header {{ background:#181818; border-bottom:1px solid #333; padding:16px 20px; position:sticky; top:0; }}
@@ -293,7 +298,7 @@ button.danger {{ background:#933; }}
 </style>
 </head>
 <body>
-<header><h1>PiViewer Dev</h1>{self.nav()}</header>
+<header><h1>{esc(app_title)}</h1>{self.nav()}</header>
 <main>{self.flash(query)}{content}</main>
 </body>
 </html>'''
