@@ -1,14 +1,14 @@
 {
   "project": "PiViewer",
-  "version": "PiViewer 2032",
-  "latest": 2032,
-  "version_number": 2032,
+  "version": "PiViewer 2033",
+  "latest": 2033,
+  "version_number": 2033,
   "channel": "stable",
   "minimum_device": "Raspberry Pi 2",
   "check_interval_hours": 24,
-  "zip_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2032.zip",
-  "sha256_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2032.zip.sha256",
-  "sha256": "0d459771c7341c4d8d207b66db18923806a14399a1c31f730215c1b6e7589eb4",
+  "zip_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2033.zip",
+  "sha256_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2033.zip.sha256",
+  "sha256": "d7010ee1498617a745a91fcf528224e96ac1696be66140ef0dce813961873ef6",
   "release_date": "2026-08-04",
-  "notes": "PiViewer 2032: WiFi.txt wordt altijd gebruikt om WiFi-profiel in te stellen. Als netwerkkabel is aangesloten blijft bedraad de voorkeur; WiFi krijgt hogere route metric."
+  "notes": "PiViewer 2033: WiFi.txt blijft de WiFi instellen. Bedraad blijft voorkeur bij netwerkkabel. NetworkManager-profielnaam is nu gelijk aan de SSID, bijvoorbeeld GAST. Geen WiFi-wachtwoorden in de release."
 }

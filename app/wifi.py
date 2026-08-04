@@ -212,7 +212,14 @@ def _write_wpa_supplicant(ssid: str, password: str, country: str = 'NL') -> str:
 
 
 def _nmcli_configure_wifi_profile(ssid: str, password: str) -> Tuple[bool, str]:
-    con_name = f'PiViewer WiFi {ssid}'
+    # Gebruik de SSID ook als NetworkManager-profielnaam.
+    # Daardoor staat een WiFi.txt met SSID=GAST opgeslagen als profiel 'GAST',
+    # niet als 'PiViewer WiFi GAST'.
+    con_name = ssid
+    legacy_name = f'PiViewer WiFi {ssid}'
+    if not _nmcli_connection_exists(con_name) and _nmcli_connection_exists(legacy_name):
+        _run(['nmcli', 'connection', 'modify', legacy_name, 'connection.id', con_name], timeout=10)
+
     if not _nmcli_connection_exists(con_name):
         ok, out = _run(['nmcli', 'connection', 'add',
                         'type', 'wifi',
