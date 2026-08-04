@@ -40,6 +40,15 @@ fi
 
 echo "[5/8] systemd-service installeren"
 cp "${APP_DIR}/systemd/${SERVICE_NAME}" "/etc/systemd/system/${SERVICE_NAME}"
+
+if [ -f "${APP_DIR}/systemd/piviewer-github-update.service" ]; then
+  cp "${APP_DIR}/systemd/piviewer-github-update.service" "/etc/systemd/system/piviewer-github-update.service"
+fi
+
+if [ -f "${APP_DIR}/systemd/piviewer-github-update.timer" ]; then
+  cp "${APP_DIR}/systemd/piviewer-github-update.timer" "/etc/systemd/system/piviewer-github-update.timer"
+fi
+
 systemctl daemon-reload
 
 echo "[6/8] Rechten zetten"
@@ -48,6 +57,11 @@ chmod 755 "${LOG_DIR}" "${STATE_DIR}"
 
 echo "[7/8] Service inschakelen en starten"
 systemctl enable "${SERVICE_NAME}"
+
+if [ -f "/etc/systemd/system/piviewer-github-update.timer" ]; then
+  systemctl enable --now piviewer-github-update.timer || true
+fi
+
 systemctl restart "${SERVICE_NAME}"
 
 echo "[8/8] Klaar"

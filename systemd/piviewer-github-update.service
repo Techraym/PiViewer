@@ -1,0 +1,12 @@
+[Unit]
+Description=PiViewer GitHub Auto Update
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/piviewer-dev
+ExecStart=/usr/bin/python3 /opt/piviewer-dev/app/github_auto_update.py
+StandardOutput=journal
+StandardError=journal

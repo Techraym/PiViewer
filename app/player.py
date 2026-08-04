@@ -15,24 +15,59 @@ class PlayerManager:
         self.app_version = app_version
         self.process: Optional[subprocess.Popen] = None
         self.current_source_id: Optional[str] = None
+        self.current_source_type: Optional[str] = None
         self.last_failed_source_id: Optional[str] = None
         self.last_failed_at: float = 0.0
         self.last_exit_code: Optional[int] = None
 
     def stop(self) -> None:
+        old_source_type = self.current_source_type
         if self.process and self.process.poll() is None:
             self.logger.info("Stop huidige speler pid=%s", self.process.pid)
             try:
-                self.process.terminate()
+                os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
                 self.process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self.logger.warning("Speler reageert niet op terminate, kill wordt gebruikt")
-                self.process.kill()
+                try:
+                    os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+                except Exception:
+                    self.process.kill()
+            except ProcessLookupError:
+                pass
             except Exception as exc:
                 self.logger.error("Fout bij stoppen speler: %s", exc)
+
         self.process = None
         self.current_source_id = None
+        self.current_source_type = None
         self.state.update(player_pid=None)
+
+        # PiViewer 2030:
+        # Als een USB-slideshow stopt, blijft /dev/fb0 soms de laatste foto vasthouden.
+        # Dat is verwarrend wanneer de USB-stick verwijderd is en de main stream terug moet komen.
+        # Daarom wissen we alleen na slideshow-stop kort het framebufferbeeld.
+        if old_source_type == "slideshow":
+            self._clear_framebuffer()
+
+    def _clear_framebuffer(self) -> None:
+        fb_path = "/dev/fb0"
+        try:
+            size = os.path.getsize(fb_path)
+        except Exception:
+            size = 8 * 1024 * 1024
+
+        try:
+            with open(fb_path, "wb", buffering=0) as fb:
+                chunk = b"\x00" * 1048576
+                remaining = size
+                while remaining > 0:
+                    n = min(len(chunk), remaining)
+                    fb.write(chunk[:n])
+                    remaining -= n
+            self.logger.info("Framebuffer gewist na stoppen slideshow")
+        except Exception as exc:
+            self.logger.debug("Framebuffer wissen overgeslagen: %s", exc)
 
     def ensure_source(self, source: Dict[str, Any]) -> None:
         source_id = source.get("id") or source.get("name") or source.get("url") or "unknown"
@@ -45,6 +80,7 @@ class PlayerManager:
         stype = source.get("type", "hls")
         source_id = source.get("id") or source.get("name") or source.get("url") or "unknown"
         self.current_source_id = source_id
+        self.current_source_type = stype
         if stype == "twitch":
             cmd = self._twitch_cmd(source)
             if not cmd:
@@ -53,6 +89,7 @@ class PlayerManager:
                 self.last_failed_at = time.time()
                 self.last_exit_code = -1
                 self.current_source_id = None
+                self.current_source_type = None
                 self.state.update(status="failed", message="Twitch HLS-url ophalen mislukt; fallback wordt geprobeerd", last_failed_source=source_id, last_exit_code=-1)
                 return
         elif stype == "slideshow":
@@ -91,6 +128,7 @@ class PlayerManager:
         self.state.update(status="stopped", message=f"Speler gestopt met exitcode {code}; fallback wordt geprobeerd", player_pid=None, last_failed_source=failed_id, last_exit_code=code)
         self.process = None
         self.current_source_id = None
+        self.current_source_type = None
         return False
 
     def _player_options(self, source: Dict[str, Any]) -> Dict[str, Any]:

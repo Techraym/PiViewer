@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import hashlib
 import json
-import os
 import re
 import shutil
 import subprocess
@@ -19,7 +18,6 @@ STATE_FILE = Path("/var/lib/piviewer-dev/github-update-last-check.json")
 LOCK_FILE = Path("/var/lib/piviewer-dev/github-update-in-progress")
 DOWNLOAD_DIR = Path("/var/lib/piviewer-dev/github-downloads")
 LOG_FILE = Path("/var/log/piviewer-dev/github-update.log")
-
 USER_AGENT = "PiViewer-GitHub-Updater"
 
 
@@ -42,10 +40,8 @@ def read_local_version():
         text = VERSION_FILE.read_text(encoding="utf-8").strip()
     except Exception:
         text = "PiViewer 0"
-
     m = re.search(r"(\d+)", text)
-    number = int(m.group(1)) if m else 0
-    return text, number
+    return text, int(m.group(1)) if m else 0
 
 
 def fetch_json(url):
@@ -56,7 +52,7 @@ def fetch_json(url):
 
 def download(url, dest):
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=60) as r, open(dest, "wb") as f:
+    with urllib.request.urlopen(req, timeout=90) as r, open(dest, "wb") as f:
         shutil.copyfileobj(r, f)
 
 
@@ -72,7 +68,6 @@ def install_zip(zip_path, target_version):
     tmp = Path(tempfile.mkdtemp(prefix="piviewer-github-update-"))
     try:
         run(["unzip", "-q", str(zip_path), "-d", str(tmp)])
-
         expected = tmp / f"PiViewer_{target_version}"
         if expected.is_dir():
             pkg = expected
@@ -88,16 +83,13 @@ def install_zip(zip_path, target_version):
 
         LOCK_FILE.write_text(str(zip_path), encoding="utf-8")
 
-        log("PiViewer stoppen voor GitHub-update")
         run(["systemctl", "stop", "piviewer-dev"], check=False)
         run(["pkill", "-f", "mpv"], check=False)
         run(["pkill", "-f", "streamlink"], check=False)
         run(["pkill", "-f", "framebuffer_slideshow_runner.py"], check=False)
 
-        log(f"Installeren vanaf: {pkg}")
         run(["bash", str(installer)])
 
-        log("Update-lock opruimen")
         try:
             LOCK_FILE.unlink()
         except FileNotFoundError:
@@ -126,8 +118,8 @@ def main():
 
     try:
         index = fetch_json(INDEX_URL + "?t=" + str(int(time.time())))
-    except Exception as e:
-        log(f"GitHub-update index ophalen mislukt: {e}")
+    except Exception as exc:
+        log(f"GitHub-update index ophalen mislukt: {exc}")
         return 0
 
     latest = int(index.get("latest") or index.get("version_number") or 0)
@@ -142,7 +134,7 @@ def main():
         "local_version": local_name,
         "local_number": local_num,
         "online_version": version_name,
-        "online_number": latest
+        "online_number": latest,
     }, indent=2), encoding="utf-8")
 
     if latest <= local_num:
@@ -154,7 +146,7 @@ def main():
         return 1
 
     if not expected_sha or len(expected_sha) != 64:
-        log("FOUT: geldige sha256 ontbreekt in updates/index.json. Update wordt geweigerd.")
+        log("FOUT: geldige sha256 ontbreekt in updates/index.json. Update geweigerd.")
         return 1
 
     zip_path = DOWNLOAD_DIR / f"PiViewer_{latest}.zip"
@@ -165,8 +157,8 @@ def main():
 
     try:
         download(zip_url + "?t=" + str(int(time.time())), tmp_path)
-    except Exception as e:
-        log(f"FOUT: download mislukt: {e}")
+    except Exception as exc:
+        log(f"FOUT: download mislukt: {exc}")
         return 1
 
     actual_sha = sha256_file(tmp_path)
@@ -175,7 +167,7 @@ def main():
 
     if actual_sha.lower() != expected_sha:
         tmp_path.unlink(missing_ok=True)
-        log("FOUT: SHA256 komt niet overeen. Update wordt geweigerd.")
+        log("FOUT: SHA256 komt niet overeen. Update geweigerd.")
         return 1
 
     tmp_path.rename(zip_path)
@@ -183,8 +175,8 @@ def main():
 
     try:
         install_zip(zip_path, latest)
-    except Exception as e:
-        log(f"FOUT tijdens installeren: {e}")
+    except Exception as exc:
+        log(f"FOUT tijdens installeren: {exc}")
         try:
             LOCK_FILE.unlink()
         except FileNotFoundError:
