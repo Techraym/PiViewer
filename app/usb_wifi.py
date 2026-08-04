@@ -2,28 +2,13 @@ import hashlib
 from pathlib import Path
 from typing import Dict, Iterable, Optional
 
-from wifi import connect_wifi, wifi_status
+from wifi import connect_wifi, wifi_status, wired_link_connected, active_wired_interfaces, apply_wired_preferred_metrics
 
 STATE_DIR = Path('/var/lib/piviewer-dev')
 APPLIED_FILE = STATE_DIR / 'usb-wifi-applied.sha256'
 
 
 def _parse_wifi_txt(path: Path) -> Dict[str, str]:
-    """Lees WiFi.txt.
-
-    Veiligheidsregel vanaf PiViewer 2016:
-    de eerste niet-lege/niet-comment regel moet expliciet aangeven of het bestand
-    gelezen mag worden. Standaard is:
-
-        PIVIEWER_WIFI=READ
-
-    Of om over te slaan:
-
-        PIVIEWER_WIFI=SKIP
-
-    Zonder geldige eerste regel wordt het bestand genegeerd. Zo voorkomt PiViewer
-    dat voorbeeldbestanden of oude WiFi.txt-bestanden per ongeluk de WiFi wijzigen.
-    """
     data: Dict[str, str] = {}
     text = path.read_text(encoding='utf-8', errors='ignore')
 
@@ -80,14 +65,13 @@ def _parse_wifi_txt(path: Path) -> Dict[str, str]:
 
     data['_ACTION'] = 'READ'
 
-    # Verwerk alle overige KEY=VALUE-regels. De eerste regel mag ook blijven staan;
-    # onbekende sleutels worden verder genegeerd.
     for raw in config_lines:
         if '=' not in raw:
             continue
         key, value = raw.split('=', 1)
         data[key.strip().upper()] = value.strip().strip('"')
     return data
+
 
 def _find_wifi_txt(mounts: Iterable[str], filename: str) -> Optional[Path]:
     target = filename.lower()
@@ -109,10 +93,20 @@ def _fingerprint(path: Path) -> str:
     return hashlib.sha256(str(path).encode('utf-8') + b'\0' + payload).hexdigest()
 
 
+def _truthy(value) -> bool:
+    return str(value).strip().lower() in ('1', 'true', 'yes', 'ja', 'on')
+
+
 def apply_usb_wifi_configs(config: Dict, logger, mounts) -> None:
     settings = config.get('usb_wifi', {})
     if not settings.get('enabled', True):
         return
+
+    try:
+        apply_wired_preferred_metrics()
+    except Exception as exc:
+        if logger:
+            logger.warning('Netwerkvoorkeur bedraad/wifi kon niet worden toegepast: %s', exc)
 
     path = _find_wifi_txt(mounts, settings.get('filename', 'WiFi.txt'))
     if not path:
@@ -141,21 +135,27 @@ def apply_usb_wifi_configs(config: Dict, logger, mounts) -> None:
     ssid = data.get('SSID', '').strip()
     password = data.get('PASSWORD', '')
     country = data.get('COUNTRY', 'NL').strip() or 'NL'
-    delete_after_success = str(data.get('DELETE_AFTER_SUCCESS', settings.get('delete_after_success', False))).lower() in ('1', 'true', 'yes', 'ja')
+    delete_after_success = _truthy(data.get('DELETE_AFTER_SUCCESS', settings.get('delete_after_success', False)))
 
     if not ssid:
         if logger:
             logger.warning('WiFi.txt gevonden maar SSID ontbreekt: %s', path)
         return
 
+    wired = wired_link_connected()
+    activate_when_wired = _truthy(data.get('ACTIVATE_WHEN_WIRED', settings.get('activate_when_wired', False)))
+    activate_wifi = (not wired) or activate_when_wired
+
     current = wifi_status().get('ssid', '')
     if logger:
         logger.info('USB WiFi-config gevonden: %s', path)
         logger.info('USB WiFi SSID: %s', ssid)
+        if wired:
+            logger.info('Netwerkkabel actief op %s; WiFi.txt wordt gebruikt om het profiel op te slaan, maar bedraad blijft voorkeur.', ','.join(active_wired_interfaces()) or 'ethernet')
         if current == ssid:
             logger.info('WiFi is al verbonden met %s; profiel wordt bijgewerkt indien nodig', ssid)
 
-    result = connect_wifi(ssid, password, country)
+    result = connect_wifi(ssid, password, country, activate=activate_wifi)
     ok = str(result.get('ok', 'false')).lower() == 'true'
     if logger:
         logger.info('USB WiFi resultaat voor %s: %s', ssid, result.get('message', ''))

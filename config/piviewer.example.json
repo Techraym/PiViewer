@@ -1,5 +1,5 @@
 {
-  "version": "PiViewer 2031",
+  "version": "PiViewer 2032",
   "timezone": "Europe/Amsterdam",
   "main_stream": {
     "name": "RTV Meppel",
@@ -129,7 +129,9 @@
     "apply_on_insert": true,
     "delete_after_success": false,
     "prefer_nmcli": true,
-    "requires_first_line": "PIVIEWER_WIFI=READ"
+    "requires_first_line": "PIVIEWER_WIFI=READ",
+    "activate_when_wired": false,
+    "wired_preferred": true
   },
   "usb_update": {
     "enabled": true,
@@ -152,5 +154,11 @@
       "enabled": true,
       "auto_install": true
     }
+  },
+  "network_preference": {
+    "prefer_wired_when_connected": true,
+    "wired_route_metric": 100,
+    "wifi_route_metric": 600,
+    "note": "WiFi.txt wordt wel gelezen en opgeslagen; bij aangesloten netwerkkabel blijft bedraad de voorkeur."
   }
 }

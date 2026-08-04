@@ -1,14 +1,14 @@
 {
   "project": "PiViewer",
-  "version": "PiViewer 2031",
-  "latest": 2031,
-  "version_number": 2031,
+  "version": "PiViewer 2032",
+  "latest": 2032,
+  "version_number": 2032,
   "channel": "stable",
   "minimum_device": "Raspberry Pi 2",
   "check_interval_hours": 24,
-  "zip_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2031.zip",
-  "sha256_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2031.zip.sha256",
-  "sha256": "0df146186f412050cb9007b791d34bf2cc38e74bc7ed5274bb4c592f67a2ef77",
+  "zip_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2032.zip",
+  "sha256_url": "https://raw.githubusercontent.com/Techraym/PiViewer/main/releases/PiViewer_2032.zip.sha256",
+  "sha256": "0d459771c7341c4d8d207b66db18923806a14399a1c31f730215c1b6e7589eb4",
   "release_date": "2026-08-04",
-  "notes": "PiViewer 2031: officiele webtitel is PiViewer final. GitHub-updates rebooten automatisch na installatie. raysnijder.nl/web-update is verwijderd."
+  "notes": "PiViewer 2032: WiFi.txt wordt altijd gebruikt om WiFi-profiel in te stellen. Als netwerkkabel is aangesloten blijft bedraad de voorkeur; WiFi krijgt hogere route metric."
 }

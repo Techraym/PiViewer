@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 WPA_CONF = Path('/etc/wpa_supplicant/wpa_supplicant.conf')
+WIRED_ROUTE_METRIC = '100'
+WIFI_ROUTE_METRIC = '600'
 
 
 def _run(cmd: List[str], timeout: int = 12) -> Tuple[bool, str]:
@@ -20,23 +22,133 @@ def _run(cmd: List[str], timeout: int = 12) -> Tuple[bool, str]:
         return False, str(exc)
 
 
+def _is_wireless_interface(name: str) -> bool:
+    if name.startswith(('wl', 'wlan')):
+        return True
+    return (Path('/sys/class/net') / name / 'wireless').exists()
+
+
+def _is_virtual_interface(name: str) -> bool:
+    prefixes = ('lo', 'docker', 'veth', 'br-', 'virbr', 'tun', 'tap', 'wg', 'tailscale', 'zt')
+    return name == 'lo' or name.startswith(prefixes)
+
+
+def ethernet_interfaces() -> List[str]:
+    root = Path('/sys/class/net')
+    result: List[str] = []
+    if not root.exists():
+        return result
+    for item in sorted(root.iterdir()):
+        name = item.name
+        if _is_virtual_interface(name) or _is_wireless_interface(name):
+            continue
+        carrier = item / 'carrier'
+        if carrier.exists():
+            result.append(name)
+    return result
+
+
+def wired_link_connected() -> bool:
+    for name in ethernet_interfaces():
+        carrier = Path('/sys/class/net') / name / 'carrier'
+        try:
+            if carrier.read_text(encoding='utf-8', errors='ignore').strip() == '1':
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def active_wired_interfaces() -> List[str]:
+    active: List[str] = []
+    for name in ethernet_interfaces():
+        carrier = Path('/sys/class/net') / name / 'carrier'
+        try:
+            if carrier.read_text(encoding='utf-8', errors='ignore').strip() == '1':
+                active.append(name)
+        except Exception:
+            pass
+    return active
+
+
+def _nmcli_connection_exists(name: str) -> bool:
+    if not shutil.which('nmcli'):
+        return False
+    ok, _ = _run(['nmcli', '-t', 'connection', 'show', name], timeout=8)
+    return ok
+
+
+def _nmcli_wifi_connections() -> List[str]:
+    if not shutil.which('nmcli'):
+        return []
+    ok, out = _run(['nmcli', '-t', '-f', 'NAME,TYPE', 'connection', 'show'], timeout=10)
+    result: List[str] = []
+    if not ok:
+        return result
+    for line in out.splitlines():
+        parts = line.split(':')
+        if len(parts) >= 2 and parts[-1] in ('wifi', '802-11-wireless'):
+            result.append(':'.join(parts[:-1]).replace('\\:', ':'))
+    return result
+
+
+def _nmcli_active_connections() -> List[Tuple[str, str, str]]:
+    if not shutil.which('nmcli'):
+        return []
+    ok, out = _run(['nmcli', '-t', '-f', 'NAME,TYPE,DEVICE', 'connection', 'show', '--active'], timeout=10)
+    result: List[Tuple[str, str, str]] = []
+    if not ok:
+        return result
+    for line in out.splitlines():
+        parts = line.split(':')
+        if len(parts) >= 3:
+            name = ':'.join(parts[:-2]).replace('\\:', ':')
+            result.append((name, parts[-2], parts[-1]))
+    return result
+
+
+def apply_wired_preferred_metrics() -> None:
+    if not shutil.which('nmcli'):
+        return
+
+    for name, typ, dev in _nmcli_active_connections():
+        if typ in ('ethernet', '802-3-ethernet'):
+            _run(['nmcli', 'connection', 'modify', name,
+                  'connection.autoconnect', 'yes',
+                  'ipv4.route-metric', WIRED_ROUTE_METRIC,
+                  'ipv6.route-metric', WIRED_ROUTE_METRIC], timeout=10)
+            if dev:
+                _run(['nmcli', 'device', 'reapply', dev], timeout=10)
+
+    for name in _nmcli_wifi_connections():
+        _run(['nmcli', 'connection', 'modify', name,
+              'connection.autoconnect', 'yes',
+              'ipv4.route-metric', WIFI_ROUTE_METRIC,
+              'ipv6.route-metric', WIFI_ROUTE_METRIC,
+              'connection.autoconnect-priority', '-10'], timeout=10)
+
+
 def wifi_status() -> Dict[str, str]:
     ok_ssid, ssid = _run(['iwgetid', '-r'], timeout=5)
     ok_ip, ips = _run(['hostname', '-I'], timeout=5)
     ok_link, link = _run(['ip', '-o', 'link', 'show', 'wlan0'], timeout=5)
     ok_rfkill, rfkill = _run(['rfkill', 'list', 'wifi'], timeout=5)
+    wired = wired_link_connected()
+    wired_ifaces = ','.join(active_wired_interfaces())
     return {
         'interface': 'wlan0',
         'ssid': ssid if ok_ssid and ssid else '',
         'ip_addresses': ips if ok_ip else '',
         'wlan0': 'aanwezig' if ok_link else 'niet gevonden',
         'rfkill': rfkill if ok_rfkill else '',
+        'wired_connected': 'true' if wired else 'false',
+        'wired_interfaces': wired_ifaces,
+        'network_preference': 'bedraad' if wired else 'wifi',
     }
 
 
 def scan_wifi() -> List[str]:
     networks = set()
-    # nmcli is fastest/cleanest when NetworkManager is present.
     if shutil.which('nmcli'):
         ok, out = _run(['nmcli', '-t', '-f', 'SSID', 'dev', 'wifi', 'list'], timeout=15)
         if ok:
@@ -44,7 +156,6 @@ def scan_wifi() -> List[str]:
                 ssid = line.strip().replace('\\:', ':')
                 if ssid:
                     networks.add(ssid)
-    # Fallback for Raspberry Pi OS Lite/wpa_supplicant setups.
     if not networks and shutil.which('iwlist'):
         ok, out = _run(['iwlist', 'wlan0', 'scan'], timeout=20)
         if ok:
@@ -100,7 +211,35 @@ def _write_wpa_supplicant(ssid: str, password: str, country: str = 'NL') -> str:
     return str(WPA_CONF)
 
 
-def connect_wifi(ssid: str, password: str, country: str = 'NL') -> Dict[str, str]:
+def _nmcli_configure_wifi_profile(ssid: str, password: str) -> Tuple[bool, str]:
+    con_name = f'PiViewer WiFi {ssid}'
+    if not _nmcli_connection_exists(con_name):
+        ok, out = _run(['nmcli', 'connection', 'add',
+                        'type', 'wifi',
+                        'ifname', 'wlan0',
+                        'con-name', con_name,
+                        'ssid', ssid], timeout=15)
+        if not ok:
+            return False, out
+
+    cmd = ['nmcli', 'connection', 'modify', con_name,
+           'connection.autoconnect', 'yes',
+           'connection.autoconnect-priority', '-10',
+           'ipv4.method', 'auto',
+           'ipv4.route-metric', WIFI_ROUTE_METRIC,
+           'ipv6.method', 'auto',
+           'ipv6.route-metric', WIFI_ROUTE_METRIC]
+    if password:
+        cmd += ['wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', password]
+    else:
+        cmd += ['wifi-sec.key-mgmt', 'none']
+    ok, out = _run(cmd, timeout=15)
+    if not ok:
+        return False, out
+    return True, con_name
+
+
+def connect_wifi(ssid: str, password: str, country: str = 'NL', activate: bool = True) -> Dict[str, str]:
     ssid = (ssid or '').strip()
     password = password or ''
     country = (country or 'NL').strip().upper()[:2]
@@ -109,23 +248,43 @@ def connect_wifi(ssid: str, password: str, country: str = 'NL') -> Dict[str, str
     if password and len(password) < 8:
         return {'ok': 'false', 'message': 'WiFi-wachtwoord moet minimaal 8 tekens zijn.'}
 
-    # Unblock WiFi if rfkill exists.
-    if shutil.which('rfkill'):
-        _run(['rfkill', 'unblock', 'wifi'], timeout=5)
+    wired = wired_link_connected()
+    apply_wired_preferred_metrics()
 
     if shutil.which('nmcli'):
-        nmcli_cmd = ['nmcli', 'dev', 'wifi', 'connect', ssid]
-        if password:
-            nmcli_cmd += ['password', password]
-        ok, out = _run(nmcli_cmd, timeout=35)
-        if ok:
-            return {'ok': 'true', 'message': f'Verbonden met {ssid} via NetworkManager.'}
-        # Continue to wpa_supplicant fallback and include nmcli error if fallback fails.
-        nmcli_error = out
+        ok_profile, profile_msg = _nmcli_configure_wifi_profile(ssid, password)
+        if not ok_profile:
+            nmcli_error = profile_msg
+        else:
+            if wired and not activate:
+                return {
+                    'ok': 'true',
+                    'message': f'WiFi-profiel opgeslagen voor {ssid}. Netwerkkabel is aangesloten; bedraad blijft voorkeur.',
+                    'details': f'NetworkManager profiel: {profile_msg}',
+                }
+
+            if shutil.which('rfkill'):
+                _run(['rfkill', 'unblock', 'wifi'], timeout=5)
+            ok_up, out_up = _run(['nmcli', 'connection', 'up', profile_msg], timeout=35)
+            apply_wired_preferred_metrics()
+            if ok_up:
+                extra = ' Bedraad blijft voorkeur.' if wired else ''
+                return {'ok': 'true', 'message': f'Verbonden met {ssid} via NetworkManager.{extra}'}
+            nmcli_error = out_up
     else:
         nmcli_error = 'nmcli niet aanwezig; wpa_supplicant fallback gebruikt.'
 
     path = _write_wpa_supplicant(ssid, password, country)
+    if wired and not activate:
+        return {
+            'ok': 'true',
+            'message': f'WiFi-configuratie opgeslagen voor {ssid}. Netwerkkabel is aangesloten; bedraad blijft voorkeur. Bestand: {path}',
+            'details': nmcli_error,
+        }
+
+    if shutil.which('rfkill'):
+        _run(['rfkill', 'unblock', 'wifi'], timeout=5)
+
     cmds = [
         ['wpa_cli', '-i', 'wlan0', 'reconfigure'],
         ['systemctl', 'restart', 'wpa_supplicant'],
